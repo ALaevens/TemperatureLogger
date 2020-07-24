@@ -5,7 +5,19 @@ from datetime import datetime
 from datetime import timedelta
 import time
 import gspread
+import requests
 from oauth2client.service_account import ServiceAccountCredentials
+
+def checkOnline():
+    try:
+        req = requests.get('http://clients3.google.com/generate_204')
+        if req.status_code == 204:
+            return True
+        else:
+            return False
+    except:
+        return False
+
 
 def createSheet():
 	scope = ["https://spreadsheets.google.com/feeds",'https://www.googleapis.com/auth/spreadsheets',"https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive"]
@@ -18,6 +30,8 @@ def main():
 	sheet = createSheet() # retrieve reference to the sheet
 
 	sensor = W1ThermSensor() # Open the temperature sensor
+
+	queue = []
 
 	running = True
 	while running:
@@ -36,18 +50,25 @@ def main():
 			timeString = datetime.now().strftime("%Y/%m/%d %H:%M")
 			print(f"Temperature at [{timeString}]: {temp} deg Celcius")
 			
-			# Upload time and temperature to google sheets
-			row = [timeString, temp]
-			sheet.append_row(row, value_input_option='USER_ENTERED')
+			newRow = [timeString, temp]
+			queue.append(newRow)
+
+			# Upload time and temperature to google sheets if there is an internet connection
+			if checkOnline():
+				for row in queue:
+					sheet.append_row(row, value_input_option='USER_ENTERED')
+
+					# hopefully the APIError exception occurs before this line,
+					# so any unsent data rows can be retried at 10min intervals
+					queue.remove(row)
+
 		except KeyboardInterrupt:
 			print("Quitting")
 			running = False
 		except Exception as e:
-			print("Closing due to error :(")
-			running = False
+			print("Exception! Row added to queue to the queue instead")
 			print(repr(e))
 			print(e)
-			print(e.args)
 
 if __name__ == "__main__":
 	main()
