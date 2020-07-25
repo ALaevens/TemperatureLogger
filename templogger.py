@@ -60,7 +60,10 @@ def main():
 
 					# hopefully the APIError exception occurs before this line,
 					# so any unsent data rows can be retried at 10min intervals
+					print(row, " sent to sheet")
 					queue.remove(row)
+
+			print("Current Queue:", queue, "\n")
 
 		except KeyboardInterrupt:
 			print("Quitting")
