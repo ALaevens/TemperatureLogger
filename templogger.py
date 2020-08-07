@@ -55,13 +55,12 @@ def main():
 
 			# Upload time and temperature to google sheets if there is an internet connection
 			if checkOnline():
-				for row in queue:
-					sheet.append_row(row, value_input_option='USER_ENTERED')
+				sheet.append_rows(queue, value_input_option='USER_ENTERED')
 
-					# hopefully the APIError exception occurs before this line,
-					# so any unsent data rows can be retried at 10min intervals
-					print(row, " sent to sheet")
-					queue.remove(row)
+				# hopefully the APIError exception occurs before this line,
+				# so any unsent data rows can be retried at 10min intervals
+				print(queue, " sent to sheet")
+				queue.clear()
 
 			print("Current Queue:", queue, "\n")
 
@@ -69,7 +68,7 @@ def main():
 			print("Quitting")
 			running = False
 		except Exception as e:
-			print("Exception! Row added to queue to the queue instead")
+			print("Exception! Row added to the queue instead")
 			print(repr(e))
 			print(e)
 
